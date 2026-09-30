@@ -92,6 +92,14 @@ body.touch #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 162px)}
 body.touch #reelIn{right:auto;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
 body.touch .fbar{top:42%}
 /* снаряжение и друзья */
+.tipcard{background:var(--panel2);border-left:4px solid #e4ae39;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px;line-height:1.45}
+.tipcard b{color:#2f8f5a}
+#tutOv .panel{max-width:520px;padding:20px 22px}
+#tutOv h2{font-family:Neucha,cursive;font-weight:400;font-size:30px;margin:0 0 8px}
+#tutOv p{line-height:1.55;margin:0 0 10px;color:var(--ink)}
+.tutdots{display:flex;gap:6px;justify-content:center;margin:6px 0 12px}
+.tutdots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tutdots i.on{background:var(--accent)}
 .maps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
 .mapc{background:var(--panel2);text-align:left;padding:12px 14px;border:2px solid transparent;display:flex;flex-direction:column;gap:4px;font-size:15px}
 .mapc small{font-weight:400;color:var(--muted);font-size:13px;line-height:1.4}
@@ -210,6 +218,7 @@ td:last-child,th:last-child{text-align:right}
     <span class="chip" id="hMode"></span>
     <button class="chip" id="hBait"></button>
     <span class="chip" id="hWeather"></span>
+    <button class="chip" id="hTip" title="Совет">💡</button>
   </div>
   <div class="hudR">
     <span class="chip" id="hLvl"></span>
@@ -265,6 +274,7 @@ td:last-child,th:last-child{text-align:right}
     <section class="tab" id="tab-fish">
       <h3>Водоём</h3>
       <div class="maps" id="maps"></div>
+      <div class="tipcard" id="tipCard"></div>
       <h3>Погода</h3>
       <div class="weather"><div class="emo" id="wEmo"></div><div><b id="wName"></b><p id="wHint"></p></div></div>
       <h3>Способ ловли</h3>
@@ -273,6 +283,7 @@ td:last-child,th:last-child{text-align:right}
       <div class="grid" id="myBaits"></div>
       <p class="note" id="gearLine"></p>
       <h3>Настройки</h3>
+      <div class="frow" style="margin-bottom:8px"><button class="mini ghost" id="tutOpen">📘 Пройти обучение</button></div>
       <div class="frow">
         <button class="mini ghost" id="sndToggle">🔊 Звук: вкл</button>
         <label class="note" style="display:flex;align-items:center;gap:8px;margin:0">Громкость <input type="range" id="sndVol" min="0" max="100" value="70" style="width:140px"></label>
@@ -358,6 +369,15 @@ td:last-child,th:last-child{text-align:right}
   </div>
 </div>
 
+<!-- TUTORIAL -->
+<div class="ov" id="tutOv" hidden>
+  <div class="panel">
+    <div class="tutdots" id="tutDots"></div>
+    <h2 id="tutTitle"></h2>
+    <p id="tutText"></p>
+    <div class="row"><button class="btn ghost" id="tutSkip">Пропустить</button><button class="btn" id="tutNext">Далее</button></div>
+  </div>
+</div>
 <!-- CATCH -->
 <div class="ov" id="catchOv" hidden>
   <div class="panel">
@@ -597,7 +617,7 @@ const MAPS={
  caucasus:{id:'caucasus',name:'Горные реки Кавказа',sub:'Бурная река у подножия хребта',emo:'🏔️',lvl:15,gear:3,flow:.7,pier:false,foam:.85,deep:'#1d5558',fogMul:1.9,coinMul:1.8,
    desc:'Прозрачная бурная река среди валунов, буковый лес и снежные вершины. Форель, кумжа, усач, голавль и храмуля.',
    species:[['btrout',1],['rtrout',1],['barbel',1],['chub',1],['khramulya',1],['seatrout',1]],
-   legendId:'goldTrout',legend:{bait:{spin:['spoon','wobbler','spinner']},weather:['rain','cloud'],minDist:12},
+   legendId:'goldTrout',legend:{bait:{spin:['spoon','wobbler','spinner']},weather:['rain','cloud'],minDist:15},
    legendHint:'Местные говорят, что после дождя из моря в реку поднимается черноморский лосось.',legendSign:'В струе мелькнул серебристый бок крупной рыбы…',
    trees:{broad:.6,fir:.4},reeds:0,pads:false,rocks:160},
 };
@@ -788,6 +808,7 @@ function migrate(s){
   s.inv.forEach(i=>{ if(i.name==='★ Колебалка «Золотой кастмастер»') i.name='★ Колебалка «Золотая молния»'; });
   if(typeof s.sound!=='boolean') s.sound=true;
   if(typeof s.drag!=='number') s.drag=.6;
+  if(s.tut===undefined && s.total>=3) s.tut=1;
   if(!Array.isArray(s.lost)) s.lost=[];
   s.lost=s.lost.filter(i=>i && BT[i.base] && COLORS[i.color] && GRADES[i.grade]).slice(-30);
   if(typeof s.xp!=='number') s.xp=Math.round((typeof s.earned==='number'?s.earned:s.coins||0)*.5);
@@ -978,6 +999,36 @@ function nagSave(first){
   if(first && nagShown) return; nagShown=true;
   setTimeout(()=>showToast(LS_OK?'⚠️ Прогресс хранится только в этом браузере. Сохраняй код сохранения: Меню → Рыбалка → «Сохранение прогресса»':'❌ Браузер не сохраняет прогресс. Скопируй код сохранения перед выходом: Меню → Рыбалка',6),first?1500:0);
 }
+// ---------- обучение ----------
+const TUT=[
+ ['Добро пожаловать!','Это рыбалка на трёх водоёмах: лесное озеро, реки Сибири и горные реки Кавказа. Лови рыбу, копи монеты и опыт, открывай кейсы и новые водоёмы. Обучение займёт минуту.'],
+ ['Подготовка','В меню «Рыбалка» выбери водоём, способ ловли и приманку. Поплавок — для мирной рыбы, фидер — для донной и крупной, спиннинг — для хищника. У каждой рыбы свои любимые приманки и цвета, подсказки есть во вкладке «Трофеи».'],
+ ['Заброс','Наведи прицел на воду: касанием экрана, джойстиком или мышкой. Затем нажми «Заброс». Внизу видна дистанция, у каждой удочки она своя.'],
+ ['Поклёвка и подсечка','Поплавок сначала подрагивает, а при поклёвке уходит под воду — тогда жми «Подсечь». На фидере следи за оранжевым кончиком удилища. На спиннинге зажимай «Мотать», хищник бьёт на проводке, а силикон берут на паузе.'],
+ ['Вываживание','Держи белую метку в зелёной зоне: зажми — натяжение растёт, отпусти — падает. Если метка залетит в красный «перетяг», леска может лопнуть. Слева регулируется фрикцион: ослабленный стравливает леску при рывках.'],
+ ['Крупная рыба','У самого берега крупная рыба устраивает последний рывок: запомни, в каком порядке загораются точки, и соедини их одной линией.'],
+ ['Развитие','За улов даются монеты и опыт. Уровни открывают новые водоёмы и снаряжение в магазине. В кейсах выпадают редкие приманки и снасти. Следи за советом 💡: он повышает шанс на самую редкую рыбу. Удачи!']];
+let tutI=0;
+function openTut(){ tutI=0; renderTut(); $('tutOv').hidden=false; }
+function renderTut(){ const [t,x]=TUT[tutI]; $('tutTitle').textContent=t; $('tutText').textContent=x;
+  $('tutDots').innerHTML=TUT.map((_,i)=>`<i class="${i===tutI?'on':''}"></i>`).join('');
+  $('tutNext').textContent=tutI===TUT.length-1?'Начать рыбалку':'Далее'; }
+function closeTut(){ $('tutOv').hidden=true; save.tut=1; persist(); }
+$('tutNext').onclick=()=>{ if(tutI<TUT.length-1){ tutI++; renderTut(); } else closeTut(); };
+$('tutSkip').onclick=closeTut;
+$('tutOpen').onclick=()=>{ save.tutLive=1; openTut(); };
+function offerTut(){
+  if(save.tut) return;
+  $('tutTitle').textContent='Пройти обучение?'; $('tutText').textContent='Короткое обучение расскажет, как забрасывать, подсекать и вываживать рыбу. Его можно пройти и позже из меню.';
+  $('tutDots').innerHTML=''; $('tutNext').textContent='Да, покажи'; $('tutSkip').textContent='Нет, спасибо'; $('tutOv').hidden=false;
+  $('tutNext').onclick=()=>{ $('tutSkip').textContent='Пропустить'; $('tutNext').onclick=()=>{ if(tutI<TUT.length-1){ tutI++; renderTut(); } else closeTut(); }; save.tutLive=1; openTut(); };
+  $('tutSkip').onclick=()=>{ $('tutSkip').onclick=closeTut; closeTut(); };
+}
+// подсказки прямо во время первой рыбалки (если обучение включено)
+const LIVE_TIPS={aim:'Наведи прицел на воду и нажми «Заброс».',wait_float:'Жди, пока поплавок уйдёт под воду, и жми «Подсечь».',wait_feeder:'Следи за оранжевым кончиком удилища: резкий изгиб — подсекай.',
+  wait_spin:'Зажимай «Мотать», чтобы вести приманку. Хищник бьёт на проводке.',fight:'Держи белую метку в зелёной зоне. Фрикцион — слева.',mini:'Запомни порядок точек и соедини их одной линией!'};
+function liveTip(key){ if(!save.tutLive) return; save.tutSeen=save.tutSeen||{}; if(save.tutSeen[key]) return; save.tutSeen[key]=1;
+  showToast('📘 '+LIVE_TIPS[key],6); if(Object.keys(save.tutSeen).length>=5){ save.tutLive=0; } persist(); }
 function onSaveReplaced(){
   G.mode=save.mode||'float';
   updateHud(); applyRodLook();
@@ -1479,6 +1530,7 @@ function renderMaps(){
 }
 function renderFishTab(){
   renderMaps();
+  $('tipCard').innerHTML=tipText()+(tipMet()?'<br><b>✓ Совет выполнен: +5% к шансу</b>':'');
   $('wEmo').textContent=weather.emo; $('wName').textContent=weather.name;
   $('wHint').textContent=weather.hint+(monsterWeather()?' '+curMap().legendHint:'');
   const modes=$('modes'); modes.innerHTML='';
@@ -1501,7 +1553,7 @@ function renderFishTab(){
     b.onclick=()=>{ save.gfx=k; persist(); applyGfx(); renderFishTab(); }; gr.appendChild(b); }
   const vr=$('viewRow'); vr.innerHTML='<span class="note">Камера:</span>';
   for(const [k,n] of [['third','От 3-го лица'],['first','От 1-го лица']]){ const b=document.createElement('button'); b.className='mini'+(save.view===k?'':' ghost'); b.textContent=n; b.onclick=()=>{ save.view=k; persist(); renderFishTab(); }; vr.appendChild(b); }
-  const hintG=document.createElement('span'); hintG.className='note'; hintG.textContent='Высокая: отражения и тени. На слабом телефоне выбери среднюю или низкую.'; gr.appendChild(hintG);
+  const hintG=document.createElement('span'); hintG.className='note'; hintG.textContent=IS_IOS?'На iPhone и iPad зеркальные отражения выключены: их видеодрайвер даёт цветные помехи на воде. Высокая графика добавляет тени.':'Высокая: отражения и тени. На слабом телефоне выбери среднюю или низкую.'; gr.appendChild(hintG);
   $('gearLine').textContent=`Снаряжение: ${equipped(G.mode).name} · ${equipped('reel').name} · ${equipped('line').name}. Поменять можно во вкладке «Снаряжение».`;
 }
 function diverPrice(it){ return (it.color==='gold' || it.grade===6) ? 100000 : 50000; }
@@ -1723,7 +1775,7 @@ const WAVES=[[0.8,0.6,0.35,1.1,0.06],[-0.5,0.85,0.55,1.4,0.035],[0.2,-0.98,0.9,1
 function waveH(x,z,t){ let h=0; for(const w of WAVES) h+=w[4]*weather.amp*Math.sin((w[0]*x+w[1]*z)*w[2]+t*w[3]); return h; }
 function lakeD(x,z){ return Math.sqrt((x/70)**2+((z+45)/50)**2); }
 let LOADED_MAP='lake', MG=null;
-const RIVER={siberia:{zc:-21.5,hw:26,amp:6},caucasus:{zc:-8,hw:11,amp:3}};
+const RIVER={siberia:{zc:-21.5,hw:26,amp:6},caucasus:{zc:-9.5,hw:12.5,amp:3}};
 function riverZc(r,x){ return r.zc+r.amp*Math.sin(x*.012)*smooth(25,90,Math.abs(x)); }
 function waterD(x,z){ if(LOADED_MAP==='lake') return lakeD(x,z); const r=RIVER[LOADED_MAP]; return Math.abs(z-riverZc(r,x))/r.hw; }
 function waterCenter(x){ return LOADED_MAP==='lake' ? {x:0,z:-40} : {x, z:riverZc(RIVER[LOADED_MAP],x)}; }
@@ -1736,7 +1788,7 @@ function groundH(x,z){
     return clamp(h,-3.5,110); }
   if(LOADED_MAP==='caucasus'){ const r=RIVER.caucasus, zc=riverZc(r,x), d=Math.abs(z-zc)/r.hw; let h=(d-1)*5;
     h+=(vnoise(x*.25,0,z*.25)-.5)*.8;
-    const far=zc-r.hw-z; if(far>0) h+=smooth(0,20,far)*10+smooth(20,130,far)*(70+170*ridge(x*.012,z*.012));
+    const far=zc-r.hw-z; if(far>0) h+=smooth(0,25,far)*8+smooth(25,150,far)*(60+150*(ridge(x*.009,z*.009)*.7+vnoise(x*.004,5,z*.004)*.45));
     const back=z-(zc+r.hw)-10; if(back>0) h+=back*1.1+smooth(30,140,back)*(60+90*ridge(x*.015+3,z*.015));
     const side=Math.abs(x)-90; if(side>0) h+=side*.9;
     return clamp(h,-2.5,330); }
@@ -1798,7 +1850,7 @@ function makeWaterNormals(){
     const o=(y*N+x)*4; img.data[o]=(nx*.5+.5)*255; img.data[o+1]=(ny*.5+.5)*255; img.data[o+2]=(nz*.5+.5)*255; img.data[o+3]=255;
   }
   g.putImageData(img,0,0);
-  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
 }
 function makeGroundDetail(){
   const N=256, c=document.createElement('canvas'); c.width=c.height=N; const g=c.getContext('2d'); const img=g.createImageData(N,N);
@@ -1816,7 +1868,8 @@ function makeGroundDetail(){
 let reflRT=null, reflCam=null; const reflTexMat=new THREE.Matrix4(); const reflClip=new THREE.Plane(new THREE.Vector3(0,1,0),0.08);
 const GFX={high:{refl:.5,shadow:2048,pr:2,grass:1},medium:{refl:.32,shadow:0,pr:1.5,grass:.6},low:{refl:0,shadow:0,pr:1,grass:.35}};
 const GFX_NAMES={high:'Высокая',medium:'Средняя',low:'Низкая'};
-function gfx(){ return GFX[save && save.gfx] || GFX.medium; }
+const IS_IOS=/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+function gfx(){ const q=GFX[save && save.gfx] || GFX.medium; return IS_IOS ? Object.assign({},q,{refl:0}) : q; }
 function applyGfx(){
   if(!renderer) return;
   const q=gfx();
@@ -1851,8 +1904,11 @@ function renderReflection(){
   const mv=ATM.mist.map(m=>m.visible); ATM.mist.forEach(m=>m.visible=false);
   const au=renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate=false;
   renderer.clippingPlanes=[reflClip];
+  const prevClear=renderer.getClearColor(new THREE.Color()), prevA=renderer.getClearAlpha();
+  renderer.setClearColor(scene.fog.color,1);
   renderer.setRenderTarget(reflRT); renderer.clear(); renderer.render(scene,reflCam);
   renderer.setRenderTarget(null); renderer.clippingPlanes=[];
+  renderer.setClearColor(prevClear,prevA);
   renderer.shadowMap.autoUpdate=au;
   [water.visible,gear.aim.visible,gear.line.visible]=vis;
   ATM.mist.forEach((m,i)=>m.visible=mv[i]);
@@ -1951,7 +2007,7 @@ function buildWater(){
   waterMat=new THREE.ShaderMaterial({
     uniforms:{uTime:{value:0},uAmp:{value:1},uDeep:{value:new THREE.Color()},uSkyTop:{value:new THREE.Color()},uSkyHor:{value:new THREE.Color()},
       uSunDir:{value:new V3()},uSunCol:{value:new THREE.Color()},uFogCol:{value:new THREE.Color()},uFogNear:{value:50},uFogFar:{value:300},uSunI:{value:1},
-      uRefl:{value:reflRT.texture},uTexMat:{value:reflTexMat},uUseRefl:{value:0},uNorm:{value:makeWaterNormals()},uFlow:{value:new THREE.Vector2()},uFoam:{value:0},uKind:{value:0},uRiv:{value:new V3(0,1,0)}},
+      uRefl:{value:reflRT.texture},uTexMat:{value:reflTexMat},uUseRefl:{value:0},uNorm:{value:makeWaterNormals()},uFlow:{value:new THREE.Vector2()},uFoam:{value:0},uKind:{value:0},uRiv:{value:new V3(0,1,0)},uBank:{value:new THREE.Color('#27351f')}},
     vertexShader:`uniform float uTime,uAmp; uniform mat4 uTexMat; varying vec3 vW; varying vec3 vN; varying vec4 vRefl;
       void main(){ vec4 w=modelMatrix*vec4(position,1.0); vRefl=uTexMat*vec4(w.x,0.0,w.z,1.0); float h=0.0; vec2 d=vec2(0.0); float ph;
         ph=(0.8*w.x+0.6*w.z)*0.35+uTime*1.1;  h+=0.06*uAmp*sin(ph);  d+=vec2(0.8,0.6)*0.35*0.06*uAmp*cos(ph);
@@ -1960,7 +2016,7 @@ function buildWater(){
         ph=(-0.9*w.x-0.3*w.z)*1.6+uTime*2.4;  h+=0.01*uAmp*sin(ph);  d+=vec2(-0.9,-0.3)*1.6*0.01*uAmp*cos(ph);
         w.y+=h; vW=w.xyz; vN=normalize(vec3(-d.x,1.0,-d.y));
         gl_Position=projectionMatrix*viewMatrix*w; }`,
-    fragmentShader:`uniform float uKind; uniform vec3 uRiv;
+    fragmentShader:`uniform float uKind; uniform vec3 uRiv; uniform vec3 uBank;
       float shoreD(vec2 p){ if(uKind<0.5) return length(vec2(p.x/70.0,(p.y+45.0)/50.0));
         float zc=uRiv.x+uRiv.z*sin(p.x*0.012)*smoothstep(25.0,90.0,abs(p.x)); return abs(p.y-zc)/uRiv.y; }
       uniform float uTime,uAmp,uFogNear,uFogFar,uSunI,uUseRefl,uFoam; uniform vec3 uDeep,uSkyTop,uSkyHor,uSunDir,uSunCol,uFogCol; uniform vec2 uFlow;
@@ -1970,7 +2026,9 @@ function buildWater(){
         vec3 n1=texture2D(uNorm,(vW.xz-fo)*0.06+vec2(uTime*0.012,uTime*0.007)).rgb*2.0-1.0;
         vec3 n2=texture2D(uNorm,(vW.xz-fo*1.2)*0.19+vec2(-uTime*0.02,uTime*0.016)).rgb*2.0-1.0;
         vec3 n3=texture2D(uNorm,(vW.xz-fo*1.4)*0.55+vec2(uTime*0.035,-uTime*0.03)).rgb*2.0-1.0;
-        vec2 dn=(n1.xy*0.5+n2.xy*0.35+n3.xy*0.2)*(0.35+uAmp*0.45);
+        float dist=length(cameraPosition-vW);
+        float detail=1.0-smoothstep(22.0,100.0,dist);           // вдали мелкая рябь не видна — убираем мерцание
+        vec2 dn=(n1.xy*0.5*(0.4+0.6*detail)+n2.xy*0.35*detail+n3.xy*0.2*detail*detail)*(0.35+uAmp*0.45);
         vec3 N=normalize(vN+vec3(dn.x,0.0,dn.y));
         vec3 V=normalize(cameraPosition-vW);
         float fr=0.03+0.97*pow(1.0-max(dot(N,V),0.0),5.0);
@@ -1981,9 +2039,12 @@ function buildWater(){
         float sd=shoreD(vW.xz);
         float shallow=smoothstep(0.82,1.0,sd);
         deep=mix(deep,deep*1.7+vec3(0.06,0.07,0.03),shallow*0.75);
-        vec2 ruv=vRefl.xy/vRefl.w+dn*(0.03+0.015*uAmp);
-        vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb*0.9;
-        vec3 env=mix(sky,refl,uUseRefl);
+        float rw=vRefl.w;
+        float rOk=step(0.05,rw)*(1.0-smoothstep(55.0,130.0,dist));
+        vec2 ruv=vRefl.xy/max(rw,0.05)+dn*(0.03+0.015*uAmp)*detail;
+        vec3 refl=clamp(texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb,0.0,1.0)*0.9;
+        vec3 skyEnv=mix(uBank,sky,smoothstep(0.012,0.13,R.y));   // тёмная полоса леса у горизонта
+        vec3 env=mix(skyEnv,refl,uUseRefl*rOk);
         vec3 col=mix(deep,env,clamp(fr*1.35+0.04,0.0,1.0));
         vec3 L=normalize(uSunDir);
         float sp=pow(max(dot(R,L),0.0),220.0)*2.2+pow(max(dot(R,L),0.0),30.0)*0.18;
@@ -1993,14 +2054,14 @@ function buildWater(){
         float lap=0.55+0.45*sin(vW.x*1.1+vW.z*1.3+uTime*1.6+n1.x*3.0);
         fm=max(fm,edge*lap*(0.45+0.25*uAmp));
         col=mix(col,vec3(0.9,0.94,0.95),fm*0.55);
-        float dist=length(cameraPosition-vW);
         col=mix(col,uFogCol,smoothstep(uFogNear,uFogFar,dist));
         gl_FragColor=vec4(col,1.0); }`
   });
   water=new THREE.Mesh(geo,waterMat); scene.add(water);
 }
 function buildTerrain(){
-  const geo=new THREE.PlaneGeometry(700,600,150,130); geo.rotateX(-Math.PI/2); geo.translate(0,0,-60);
+  const TR=LOADED_MAP==='caucasus'?[230,200]:[150,130];
+  const geo=new THREE.PlaneGeometry(700,600,TR[0],TR[1]); geo.rotateX(-Math.PI/2); geo.translate(0,0,-60);
   const p=geo.attributes.position, cols=new Float32Array(p.count*3);
   const PAL={lake:['#4a4030','#566a30','#33472a','#6d6a62',99,999],siberia:['#7d735f','#4f6030','#2e3f26','#6a6258',30,999],caucasus:['#8a8a80','#5a7a34','#3a5a2a','#6d6d68',45,120]}[LOADED_MAP];
   const mud=new THREE.Color(PAL[0]), grass=new THREE.Color(PAL[1]), dark=new THREE.Color(PAL[2]), rock=new THREE.Color(PAL[3]), snow=new THREE.Color('#eef1f3');
@@ -2134,11 +2195,11 @@ function buildRocks(){
   const mp=curMap(), spots=[];
   for(const [x,z] of sampleArea(.9,1.06,mp.rocks,4000,(x,z)=>!(Math.abs(x)<3.5 && z>-6))) spots.push([x,Math.max(groundH(x,z),-.35),z,rand(.4,1.6)]);
   if(LOADED_MAP==='caucasus'){
-    for(const [x,z] of sampleArea(.05,.95,70,3000,(x,z)=>!(Math.abs(x)<2.5 && z>-2))) spots.push([x,-.45,z,rand(.6,2.2)]);
+    for(const [x,z] of sampleArea(.05,.95,60,3000,(x,z)=>!(Math.abs(x)<9+Math.max(0,z+30)*.4 && z>-40))) spots.push([x,-.45,z,rand(.6,2.2)]);
     for(const [x,z] of sampleArea(1.05,3,60,3000,(x,z)=>Math.hypot(x,z-6)>4)) spots.push([x,groundH(x,z),z,rand(.8,3)]);
   }
   if(LOADED_MAP==='siberia') for(const [x,z] of sampleArea(1.3,3.5,30,3000,(x,z)=>z<-30)) spots.push([x,groundH(x,z),z,rand(2,5)]);
-  const near=LOADED_MAP==='caucasus'?[[-3.4,3.2,1.2],[-5,5.5,1.6],[3.4,2.6,1.1],[4.6,5.2,1.4],[-2.6,.8,.9],[6,1.2,1.8]]:[[-3.4,4.2,.9],[-4.6,6.5,1.3],[3.2,3.6,.7],[4.4,6.0,1.1],[-2.8,1.4,.6],[6,1.5,1.4]];
+  const near=LOADED_MAP==='caucasus'?[[-4.4,4.2,1.2],[-5.5,6,1.6],[4.4,4.6,1.1],[5.6,6.2,1.4],[-7,3.4,.9],[7.5,3.5,1.6]]:[[-3.4,4.2,.9],[-4.6,6.5,1.3],[3.2,3.6,.7],[4.4,6.0,1.1],[-2.8,1.4,.6],[6,1.5,1.4]];
   for(const [x,z,sz] of near) spots.push([x,Math.max(groundH(x,z),-.3),z,sz]);
   const m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new V3(), pos=new V3(), e=new THREE.Euler();
   const mat=new THREE.MeshLambertMaterial({vertexColors:true});
@@ -2420,7 +2481,8 @@ function buildGear(){
   gear.line=new THREE.Line(lg,new THREE.LineBasicMaterial({color:0xe8ecee,transparent:true,opacity:.7})); gear.line.frustumCulled=false; scene.add(gear.line);
   gear.angler=buildAngler(); scene.add(gear.angler);
   // прицел
-  const ring=new THREE.Mesh(new THREE.RingGeometry(.35,.48,40),new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:.85,depthWrite:false}));
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.33,.5,40),new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:.95,depthWrite:false,depthTest:false,fog:false}));
+  ring.renderOrder=20;
   ring.rotation.x=-Math.PI/2; scene.add(ring); gear.aim=ring;
   hideGear();
 }
@@ -2956,6 +3018,7 @@ function applyWeather(w){
   const mp=curMap(), fm=mp.fogMul||1;
   if(mp.deep) U.uDeep.value.set(mp.deep);
   U.uFlow.value.set(mp.flow||0,0); U.uFoam.value=mp.foam||0;
+  U.uBank.value.set({lake:'#26341e',siberia:'#1f2c1d',caucasus:'#34452f'}[LOADED_MAP]||'#26341e').lerp(new THREE.Color(w.fogCol),.35);
   if(LOADED_MAP==='lake') U.uKind.value=0; else { const r=RIVER[LOADED_MAP]; U.uKind.value=1; U.uRiv.value.set(r.zc,r.hw,r.amp); }
   WIND_U.uWind.value=.6+w.amp*.5;
   updateAtmosphere();
@@ -2979,6 +3042,7 @@ function rodBase(){ let b=ROD_BASE_CACHE[G.mode]; if(!b){ const o=ROD_OFF[G.mode
 function placeStand(){ if(gear.stand) gear.stand.position.y=standY(.8,4.6)-.55; }
 
 function startFishing(){
+  if(tipMet()) setTimeout(()=>showToast('💡 Совет выполнен: +5% к шансу на '+currentTip().sp.name.toLowerCase(),4),600);
   G.state='aim'; G.bite=null; G.fight=null; G.reeling=false; G.holding=false;
   $('hud').hidden=false; updateHud();
   for(const k in gear.rods) gear.rods[k].yaw.visible = k===G.mode;
@@ -2992,20 +3056,32 @@ function updateHud(){
   $('hBait').innerHTML = it ? `<img src="${iconURL(it.base,it.color)}" alt="">${itemLabel(it)} · ${BT[it.base].lure?it.uses+' шт.':'×'+it.uses}` : 'Нет приманки';
   $('hBait').style.borderBottom = it ? `3px solid ${GRADES[it.grade].color}` : '';
   $('hCoins').textContent=fmtCoins(save.coins); renderLvl();
+  $('hTip').textContent=tipMet()?'💡 +5%':'💡'; $('hTip').style.color=tipMet()?'#8ff0a4':'';
   requestAnimationFrame(layoutOverlays);
 }
 function layoutOverlays(){ const h=$('hud'); const b=h.hidden?12:h.getBoundingClientRect().bottom; document.documentElement.style.setProperty('--hudB',Math.round(b)+'px'); }
 window.addEventListener('resize',()=>setTimeout(layoutOverlays,50));
 $('hMenu').onclick=()=>openHub();
+$('hTip').onclick=()=>showToast(tipText()+(tipMet()?' ✓ Выполнено!':''),7);
 $('hBait').onclick=()=>openHub('fish');
 
 function castRange(){ return (G.mode==='float' && equipped('float').grade<=2) ? [5,12] : METHODS[G.mode].range; }
+// сколько метров воды в направлении заброса (до дальнего берега)
+function waterAhead(b,ux,uz){ let last=0, inW=false; for(let d=1; d<=60; d+=.5){ if(waterD(b.x+ux*d,b.z+uz*d)<.93){ inW=true; last=d; } else if(inW) break; } return last; }
+let AIM_MAX=0;
 function clampAim(p){
-  const b=rodBase(); const r=castRange();
-  const dx=p.x-b.x, dz=p.z-b.z; let d=Math.hypot(dx,dz)||1;
-  const nd=clamp(d,r[0],r[1]); p.x=b.x+dx/d*nd; p.z=b.z+dz/d*nd;
-  // внутри озера
-  let tries=0; while(waterD(p.x,p.z)>.93 && tries<40){ const c=waterCenter(p.x); p.x=lerp(p.x,c.x,.08); p.z=lerp(p.z,c.z,.08); tries++; }
+  const b=rodBase(), r=castRange();
+  let ux=p.x-b.x, uz=p.z-b.z; const d=Math.hypot(ux,uz)||1; ux/=d; uz/=d;
+  const w=waterAhead(b,ux,uz);
+  if(w>0){
+    // прицел не уходит дальше дальнего берега и дальности удилища
+    const hi=Math.min(r[1],w), lo=Math.min(r[0],hi); AIM_MAX=hi;
+    const nd=clamp(d,lo,hi); p.x=b.x+ux*nd; p.z=b.z+uz*nd;
+  } else {
+    AIM_MAX=r[1];
+    const nd=clamp(d,r[0],r[1]); p.x=b.x+ux*nd; p.z=b.z+uz*nd;
+    let tries=0; while(waterD(p.x,p.z)>.93 && tries<40){ const c=waterCenter(p.x); p.x=lerp(p.x,c.x,.08); p.z=lerp(p.z,c.z,.08); tries++; }
+  }
   p.y=0; return p;
 }
 function doCast(){
@@ -3042,11 +3118,25 @@ const BAIT_SIZE={blood:-.5,maggot:-.3,fly:-.3,caddis:-.2,barley:-.1,bread:0,doug
 function rollFish(it){
   const t=G.table; let r=Math.random()*t.sum, sp=t.list[0][0];
   for(const [s,v] of t.list){ if((r-=v)<=0){ sp=s; break; } }
+  if(tipMet() && Math.random()<.05){ const tp=currentTip().sp; if(t.list.some(x=>x[0]===tp)) sp=tp; }
   const q=Math.pow(Math.random(),2.2/(GRADES[it.grade].trophy*Math.max(.4,1+(BAIT_SIZE[it.base]||0)*.6)));
   const weight=sp.w[0]+(sp.w[1]-sp.w[0])*q;
   let tier=sp.tier; if(q>.93) tier=5; else if(q>.7) tier=Math.min(4,tier+1);
   return {sp,weight,q,tier};
 }
+// ---------- совет на самую редкую рыбу водоёма (+5% к её поклёвке) ----------
+function rarestSpecies(mp){ return mapSpeciesIds(mp).map(id=>SPMAP[id]).filter(Boolean).sort((a,b)=>b.tier-a.tier||a.ab-b.ab)[0]; }
+function currentTip(){
+  const sp=rarestSpecies(curMap());
+  const method=Object.entries(sp.method).sort((a,b)=>b[1]-a[1])[0][0];
+  const bait=Object.entries(sp.bait).filter(([b])=>BT[b].m.includes(method)).sort((a,b)=>b[1]-a[1])[0][0];
+  const colE=Object.entries(sp.col||{}).sort((a,b)=>b[1]-a[1])[0];
+  const wBest=WEATHERS.slice().sort((a,b)=>(b.fishF[sp.id]||1)-(a.fishF[sp.id]||1))[0];
+  return {sp,method,bait,color:colE?colE[0]:null,weather:wBest};
+}
+function tipMet(){ const t=currentTip(), it=curItem(); return !!it && G.mode===t.method && it.base===t.bait; }
+function tipText(){ const t=currentTip();
+  return `💡 Совет: ${t.sp.name} — самая редкая рыба водоёма. Лови на ${METHODS[t.method].name.toLowerCase()} с приманкой «${BT[t.bait].name}»${t.color?`, лучше цвета «${COLORS[t.color].name.toLowerCase()}»`:''}. Лучшая погода — ${t.weather.name.toLowerCase()}. Выполни совет, и шанс на эту рыбу вырастет на 5%.`; }
 function legendSp(mp){ return SPMAP[(mp||curMap()).legendId]; }
 function monsterWeather(){ return curMap().legend.weather.includes(weather.id); }
 function monsterPossible(it,spot){
@@ -3336,13 +3426,15 @@ function update(dt){
     G.aim.set(base.x+Math.sin(ang)*len,0,base.z-Math.cos(ang)*len); clampAim(G.aim);
   }
   updatePad();
+  if(save.tutLive){ const k=G.state==='wait'?'wait_'+G.mode:G.state; if(LIVE_TIPS[k]) liveTip(k); }
   if(G.state==='aim'){
     const p=clampAim(G.aim.clone()); gear.aim.visible=true;
     gear.aim.position.set(p.x,waveH(p.x,p.z,G.t)+.03,p.z);
     const d=p.distanceTo(new V3(base.x,0,base.z)); gear.aim.scale.setScalar(.6+d/18);
     gear.float.visible=false; gear.line.visible=false; gear.sinker.visible=false;
-    const r=castRange();
-    setHint(TOUCH ? `Прицел — джойстиком или касанием воды, затем «Заброс» · ${Math.round(d)} м (от ${r[0]} до ${r[1]})` : `Наведи на воду и нажми, чтобы забросить · ${Math.round(d)} м (от ${r[0]} до ${r[1]})`);
+    const r=[Math.min(castRange()[0],AIM_MAX),Math.round(AIM_MAX)];
+    if(AIM_MAX<castRange()[1]-.5 && d>=AIM_MAX-.6) gear.aim.material.color.set(0xffb070); else gear.aim.material.color.set(0xfff0c0);
+    setHint(TOUCH ? `Прицел — джойстиком или касанием воды, затем «Заброс» · ${Math.round(d)} м (от ${Math.round(r[0])} до ${r[1]}${AIM_MAX<castRange()[1]-.5?', дальше берег':''})` : `Наведи на воду и нажми, чтобы забросить · ${Math.round(d)} м (от ${Math.round(r[0])} до ${r[1]}${AIM_MAX<castRange()[1]-.5?', дальше берег':''})`);
     $('reelIn').hidden=true;
   }
   else if(G.state==='cast'){
@@ -3561,6 +3653,7 @@ function boot(){
   $('loading').hidden=true;
   openHub('fish');
   initOnline();
+  setTimeout(offerTut,1200);
   setTimeout(warmFishCache,800);
   requestAnimationFrame(loop);
 }
