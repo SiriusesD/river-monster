@@ -25,6 +25,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 button{touch-action:manipulation}
 #game{position:fixed;inset:0;touch-action:none}
 #game canvas{display:block;width:100%;height:100%;cursor:crosshair}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 58%,rgba(0,0,0,.32) 100%)}
 button{font:inherit;font-weight:800;border:0;border-radius:10px;cursor:pointer;color:inherit;background:none}
 button:focus-visible{outline:3px solid #ffd59a;outline-offset:2px}
 .btn{background:var(--accent);color:#fff;padding:12px 20px;font-size:17px}
@@ -44,12 +45,12 @@ button:focus-visible{outline:3px solid #ffd59a;outline-offset:2px}
 #reelIn[hidden]{display:none}
 #alert{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);font-family:Neucha,cursive;font-size:clamp(34px,7vw,60px);color:#fff4d6;text-shadow:0 2px 12px rgba(0,0,0,.6);pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap}
 #alert.on{opacity:1}
-#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 64px);transform:translateX(-50%);background:rgba(8,22,28,.85);color:#fff4d6;padding:9px 16px;border-radius:10px;font-weight:700;font-size:15px;max-width:90vw;text-align:center;pointer-events:none}
+#toast{position:fixed;left:50%;top:calc(var(--hudB,64px) + 54px);z-index:4;transform:translateX(-50%);background:rgba(8,22,28,.85);color:#fff4d6;padding:9px 16px;border-radius:10px;font-weight:700;font-size:15px;max-width:90vw;text-align:center;pointer-events:none}
 #toast[hidden]{display:none}
 /* вываживание */
 #fightUI{position:fixed;inset:0;pointer-events:none;z-index:2}
 #fightUI[hidden]{display:none}
-.fprog{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(8,22,28,.78);padding:8px 12px;border-radius:12px;color:#eef4f5;font-weight:800;font-size:13px;white-space:nowrap}
+.fprog{position:absolute;left:50%;top:calc(var(--hudB,64px) + 8px);transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(8,22,28,.78);padding:8px 12px;border-radius:12px;color:#eef4f5;font-weight:800;font-size:13px;white-space:nowrap}
 .ptrack{width:min(46vw,300px);height:10px;background:rgba(255,255,255,.18);border-radius:6px;overflow:hidden}
 #pFill{height:100%;width:0;background:linear-gradient(90deg,#ffd59a,#ffb347)}
 .fbar{position:absolute;right:calc(env(safe-area-inset-right,0px) + 14px);top:50%;transform:translateY(-50%);background:rgba(8,22,28,.8);border-radius:14px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;color:#eef4f5;font-size:11px;font-weight:800;letter-spacing:.03em}
@@ -70,6 +71,15 @@ button:focus-visible{outline:3px solid #ffd59a;outline-offset:2px}
 #dragFill{width:100%;background:linear-gradient(0deg,#5ad688,#ffd166,#ff6b4a);height:60%}
 #dragPanel.slip #dragState{color:#ffd166}
 .dl{font-size:10px;opacity:.85;letter-spacing:.04em}
+/* мини-игра «соедини точки» */
+#mini{position:fixed;inset:0;z-index:6;background:rgba(4,14,18,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);touch-action:none}
+#mini[hidden]{display:none}
+.mhead{color:#fff4d6;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;width:min(92vw,520px)}
+.mhead b{font-family:Neucha,cursive;font-size:30px;font-weight:400}
+.mhead span{font-size:15px;color:#d5e3e6}
+.mtime{width:100%;height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden}
+#miniTime{height:100%;width:100%;background:linear-gradient(90deg,#ff6b4a,#ffd166)}
+#miniCv{width:min(92vw,520px);height:min(92vw,520px,62vh);background:rgba(10,30,38,.85);border-radius:18px;touch-action:none}
 /* сенсорное управление */
 #pad[hidden]{display:none}
 #stick{position:fixed;left:calc(env(safe-area-inset-left,0px) + 22px);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:124px;height:124px;border-radius:50%;background:rgba(8,22,28,.45);border:2px solid rgba(255,255,255,.35);touch-action:none;z-index:3}
@@ -192,6 +202,7 @@ td:last-child,th:last-child{text-align:right}
 </head>
 <body>
 <div id="game"></div>
+<div id="vignette"></div>
 <div class="loading" id="loading">Готовим озеро…</div>
 
 <div id="hud" hidden>
@@ -229,6 +240,10 @@ td:last-child,th:last-child{text-align:right}
     <span class="dl" id="dragState">держит</span>
   </div>
 </div>
+<div id="mini" hidden>
+  <div class="mhead"><b id="miniTitle">Последний рывок!</b><span id="miniInfo"></span><div class="mtime"><div id="miniTime"></div></div></div>
+  <canvas id="miniCv"></canvas>
+</div>
 <div id="pad" hidden>
   <div id="stick"><span>прицел</span><div id="knob"></div></div>
   <button id="actBtn">Заброс</button>
@@ -240,6 +255,7 @@ td:last-child,th:last-child{text-align:right}
     <div class="phead"><h1>Охота на речного монстра</h1><div class="lvlbox"><div class="lvlrow"><b id="hubLvl"></b><span class="coins" id="hubCoins"></span></div><div class="xpbar"><div id="hubXp"></div></div><small class="muted" id="hubXpTxt"></small></div></div>
     <div class="tabs" role="tablist">
       <button role="tab" data-tab="fish" aria-selected="true">Рыбалка</button>
+      <button role="tab" data-tab="inv" aria-selected="false">Инвентарь</button>
       <button role="tab" data-tab="gear" aria-selected="false">Снаряжение</button>
       <button role="tab" data-tab="shop" aria-selected="false">Магазин</button>
       <button role="tab" data-tab="cases" aria-selected="false">Кейсы</button>
@@ -272,6 +288,13 @@ td:last-child,th:last-child{text-align:right}
       <div class="frow" style="margin-top:6px"><button class="mini ghost" id="saveLoad">Загрузить из кода</button></div>
       <p class="note" id="saveMsg"></p>
       <div class="startRow"><button class="btn" id="goBtn">На воду</button></div>
+    </section>
+    <section class="tab" id="tab-inv" hidden>
+      <p class="muted" style="margin-top:0">Все твои приманки и насадки. На рыбалке показываются только те, что подходят к выбранному способу ловли.</p>
+      <div id="invBox"></div>
+      <h3>🤿 Оборванные приманки</h3>
+      <p class="muted" style="margin-top:0">Приманку, оставшуюся на дне после обрыва лески, может достать водолаз: 50 000 🪙, для золотых и легендарных приманок 100 000 🪙.</p>
+      <div class="grid" id="lostBox"></div>
     </section>
     <section class="tab" id="tab-gear" hidden>
       <p class="muted" style="margin-top:0">Во время вываживания регулируй фрикцион кнопками − и + (на клавиатуре Q и E): ослабленный стравливает леску при рывках и бережёт её, затянутый быстрее подтягивает рыбу, но рискует обрывом. Снаряжение решает, как пойдёт вываживание. Удилище расширяет зелёную зону и дольше держит поклёвку, катушка сглаживает метания рыбы и быстрее подтягивает её к берегу, а прочная леска дольше терпит перетяг.</p>
@@ -435,7 +458,7 @@ const BT={
 
 const SPECIES=[
  {id:'roach',name:'Плотва',tier:1,ab:10,w:[.05,1.2],lenK:.42,ppk:30,str:.7,
-  method:{float:3,feeder:2}, bait:{maggot:3,blood:3,worm:2,dough:2,bread:2,barley:2,corn:1}, col:{red:1.25,white:1.1},
+  method:{float:3,feeder:2}, bait:{maggot:3,blood:3,worm:1.5,dough:1.5,bread:1.5,barley:2,corn:1}, col:{red:1.25,white:1.1},
   m:{prof:[[0,.07],[.12,.085],[.3,.19],[.55,.26],[.75,.24],[.9,.16],[1,.04]],wr:.42,hump:.05,
      cBack:'#34495a',cSide:'#c5d0d6',cBelly:'#eef2f2',finD:'#6f7470',finT:'#8a7d70',finA:'#d9602e',
      scale:.03,scaleA:.18,eye:{u:.92,r:.028,col:'#d32a1c'},dorsal:[.44,.57,.12],anal:[.22,.34,.08],pec:.8,pel:.5,
@@ -447,7 +470,7 @@ const SPECIES=[
      scale:.032,scaleA:.2,eye:{u:.92,r:.028,col:'#e0a020'},dorsal:[.36,.48,.12],anal:[.24,.38,.08],pec:.8,pel:.5,
      tail:{size:.2,type:'fork'},shine:60,spec:'#998'}},
  {id:'crucian',name:'Карась',tier:1,ab:7,w:[.1,2.0],lenK:.36,ppk:40,str:.9,
-  method:{float:3,feeder:2}, bait:{worm:3,dough:3,maggot:2,corn:2,bread:2,barley:2,blood:1}, col:{red:1.2,natural:1.1},
+  method:{float:3,feeder:2}, bait:{worm:3,dough:3,maggot:2,corn:1.5,bread:2,barley:1.5,blood:1.5}, col:{red:1.2,natural:1.1},
   m:{prof:[[0,.1],[.12,.13],[.3,.33],[.55,.44],[.75,.4],[.9,.25],[1,.06]],wr:.45,hump:.06,
      cBack:'#40361c',cSide:'#b8913d',cBelly:'#e2cc8e',fin:'#6e5228',
      scale:.04,scaleA:.22,eye:{u:.91,r:.026,col:'#c9a040'},dorsal:[.34,.66,.11],anal:[.2,.3,.08],pec:.8,pel:.5,
@@ -461,7 +484,7 @@ const SPECIES=[
      dorsal:[.5,.72,.15,'spiny'],dorsal2:[.32,.47,.11],anal:[.22,.32,.08],pec:.8,pel:.52,
      tail:{size:.18,type:'mid'},shine:45,spec:'#776'}},
  {id:'bream',name:'Лещ',tier:2,ab:5,w:[.3,5],lenK:.39,ppk:45,str:1.2,
-  method:{float:1,feeder:3}, bait:{worm:3,maggot:2,blood:2,corn:2,barley:2,dough:1,boilie:1}, col:{natural:1.2,red:1.1},
+  method:{float:1,feeder:3}, bait:{worm:3,maggot:2.5,blood:2,corn:1.5,barley:2,dough:1,boilie:1}, col:{natural:1.2,red:1.1},
   m:{prof:[[0,.07],[.12,.1],[.3,.34],[.5,.44],[.7,.38],[.88,.2],[1,.05]],wr:.22,hump:.1,
      cBack:'#342e22',cSide:'#a0855a',cBelly:'#d6c4a0',fin:'#3a3430',
      scale:.028,scaleA:.2,eye:{u:.92,r:.026,col:'#c8c0a0'},dorsal:[.46,.56,.15],anal:[.13,.45,.1],pec:.8,pel:.52,
@@ -491,7 +514,7 @@ const SPECIES=[
      scale:.02,scaleA:.14,eye:{u:.92,r:.024,col:'#e8d080'},dorsal:[.46,.58,.15],anal:[.2,.34,.09],pec:.8,pel:.5,
      tail:{size:.24,type:'fork'},shine:90,spec:'#aab'}},
  {id:'carp',name:'Карп',tier:3,ab:2,w:[1,20],lenK:.38,ppk:60,str:2.0,
-  method:{feeder:3,float:1}, bait:{corn:3,boilie:3,dough:2,worm:1,barley:1}, col:{yellow:1.3,pink:1.2,natural:1.05},
+  method:{feeder:3,float:1}, bait:{corn:3,boilie:3,dough:1.5,worm:1,barley:1}, col:{yellow:1.3,pink:1.2,natural:1.05},
   m:{prof:[[0,.1],[.12,.12],[.3,.26],[.55,.32],[.75,.3],[.9,.2],[1,.07]],wr:.5,hump:.07,
      cBack:'#3a2e16',cSide:'#b08236',cBelly:'#e0c07a',finD:'#6e4a26',finT:'#9a5a2a',finA:'#9a5a2a',
      scale:.075,scaleA:.35,eye:{u:.9,r:.022,col:'#d0a040'},dorsal:[.32,.66,.12],anal:[.18,.28,.09],pec:.8,pel:.5,
@@ -765,6 +788,8 @@ function migrate(s){
   s.inv.forEach(i=>{ if(i.name==='★ Колебалка «Золотой кастмастер»') i.name='★ Колебалка «Золотая молния»'; });
   if(typeof s.sound!=='boolean') s.sound=true;
   if(typeof s.drag!=='number') s.drag=.6;
+  if(!Array.isArray(s.lost)) s.lost=[];
+  s.lost=s.lost.filter(i=>i && BT[i.base] && COLORS[i.color] && GRADES[i.grade]).slice(-30);
   if(typeof s.xp!=='number') s.xp=Math.round((typeof s.earned==='number'?s.earned:s.coins||0)*.5);
   if(typeof s.lvl!=='number') s.lvl=levelOf(s.xp);
   if(s.view!=='first' && s.view!=='third') s.view='third';
@@ -1429,7 +1454,8 @@ function addXp(n){
 function renderHub(){
   $('hubCoins').textContent=fmtCoins(save.coins); renderLvl();
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===hubTab?'true':'false'));
-  ['fish','gear','shop','cases','trophy','friends'].forEach(t=>$('tab-'+t).hidden = t!==hubTab);
+  ['fish','inv','gear','shop','cases','trophy','friends'].forEach(t=>$('tab-'+t).hidden = t!==hubTab);
+  if(hubTab==='inv') renderInventory();
   if(hubTab==='fish') renderFishTab();
   if(hubTab==='gear') renderGearTab();
   if(hubTab==='friends') renderFriends();
@@ -1465,7 +1491,7 @@ function renderFishTab(){
   }
   const box=$('myBaits'); box.innerHTML='';
   const list=save.inv.filter(i=>BT[i.base].m.includes(G.mode)).sort((a,b)=>b.grade-a.grade);
-  if(!list.length){ box.innerHTML='<p class="muted" style="grid-column:1/-1;margin:0">Для этого способа нет приманок. Загляни в магазин или открой кейс.</p>'; }
+  if(!list.length){ box.innerHTML='<p class="muted" style="grid-column:1/-1;margin:0">Для этого способа нет приманок. Загляни в магазин или открой кейс. Все приманки — во вкладке «Инвентарь».</p>'; }
   if(list.length && !itemById(save.sel[G.mode])) save.sel[G.mode]=list[0].uid;
   for(const it of list) box.appendChild(itemTile(it, save.sel[G.mode]===it.uid, ()=>{ save.sel[G.mode]=it.uid; persist(); renderFishTab(); }));
   $('goBtn').disabled=!curItem();
@@ -1477,6 +1503,28 @@ function renderFishTab(){
   for(const [k,n] of [['third','От 3-го лица'],['first','От 1-го лица']]){ const b=document.createElement('button'); b.className='mini'+(save.view===k?'':' ghost'); b.textContent=n; b.onclick=()=>{ save.view=k; persist(); renderFishTab(); }; vr.appendChild(b); }
   const hintG=document.createElement('span'); hintG.className='note'; hintG.textContent='Высокая: отражения и тени. На слабом телефоне выбери среднюю или низкую.'; gr.appendChild(hintG);
   $('gearLine').textContent=`Снаряжение: ${equipped(G.mode).name} · ${equipped('reel').name} · ${equipped('line').name}. Поменять можно во вкладке «Снаряжение».`;
+}
+function diverPrice(it){ return (it.color==='gold' || it.grade===6) ? 100000 : 50000; }
+function renderInventory(){
+  const box=$('invBox'); box.innerHTML='';
+  for(const k of ['float','feeder','spin']){
+    const list=save.inv.filter(i=>BT[i.base].m.includes(k)).sort((a,b)=>b.grade-a.grade);
+    const h=document.createElement('h3'); h.textContent=`${METHODS[k].emo} ${METHODS[k].name} (${list.length})`; box.appendChild(h);
+    const g=document.createElement('div'); g.className='grid';
+    if(!list.length){ const p2=document.createElement('p'); p2.className='muted'; p2.style.margin='0'; p2.textContent='Пусто'; g.appendChild(p2); }
+    for(const it of list) g.appendChild(itemTile(it,save.sel[k]===it.uid,()=>{ save.sel[k]=it.uid; G.mode=k; save.mode=k; persist(); renderInventory(); showToast(`Выбрано для ловли: ${it.name}`,1.6); }));
+    box.appendChild(g);
+  }
+  const lb=$('lostBox'); lb.innerHTML='';
+  if(!save.lost.length){ lb.innerHTML='<p class="muted" style="margin:0;grid-column:1/-1">Пока ничего не оборвалось.</p>'; return; }
+  save.lost.forEach((it,idx)=>{
+    const d=document.createElement('div'); d.className='item'; d.style.setProperty('--g',GRADES[it.grade].color);
+    d.innerHTML=`<img src="${iconURL(it.base,it.color)}" alt=""><span>${itemLabel(it)}</span><small>${COLORS[it.color].name}</small>`;
+    const pr=diverPrice(it), b=document.createElement('button'); b.className='price'; b.textContent=`🤿 ${pr.toLocaleString('ru-RU')} 🪙`; b.disabled=save.coins<pr;
+    b.onclick=()=>{ if(save.coins<pr) return; save.coins-=pr; save.lost.splice(idx,1);
+      addItem({base:it.base,name:it.name,color:it.color,grade:it.grade,uses:1,st:it.st}); persist(); SND.coin(); renderHub(); showToast(`Водолаз достал: ${it.name}`,2.4); };
+    d.appendChild(b); lb.appendChild(d);
+  });
 }
 function renderGearTab(){
   const slots=$('slots'); slots.innerHTML='';
@@ -1517,7 +1565,10 @@ $('goBtn').onclick=()=>{
   if(!mapUnlock(curMap()).ok){ save.map='lake'; }
   if(LOADED_MAP!==save.map){
     $('loading').textContent='Загружаем водоём…'; $('loading').hidden=false; closeHub();
-    setTimeout(()=>{ loadMapScene(save.map); warmList=null; setTimeout(warmFishCache,500); $('loading').hidden=true; startFishing(); },60);
+    setTimeout(()=>{
+      try{ loadMapScene(save.map); }
+      catch(e){ console.error(e); save.map='lake'; try{ loadMapScene('lake'); }catch(_){} showToast('Не удалось загрузить водоём, вернули на озеро. Попробуй снизить графику в меню.',5); }
+      warmList=null; setTimeout(warmFishCache,500); $('loading').hidden=true; startFishing(); },60);
   } else { closeHub(); startFishing(); }
 };
 
@@ -1604,6 +1655,10 @@ function openCase(cs){
   openingCase=cs;
   const win=rollCaseItem(cs);
   const st = !win.gear && Math.random()<.1 ? 0 : null;
+  // награда начисляется сразу, анимация — только показ
+  if(win.gear) save.gear[win.gear]=(save.gear[win.gear]||0)+1;
+  else addItem({base:win.base,name:win.name,color:win.color,grade:win.grade,uses:caseUses(win.base,win.grade),st});
+  persist();
   const N=48, WIN=40, TW=118;
   const strip=$('strip'); let html='';
   for(let i=0;i<N;i++){
@@ -1622,11 +1677,10 @@ function openCase(cs){
   animateStrip(strip,dist,dur,TW,center,()=>{
     const gr=GRADES[win.grade];
     if(win.gear){
-      const t=GEAR_TPL[win.gear]; save.gear[t.tid]=(save.gear[t.tid]||0)+1; persist();
+      const t=GEAR_TPL[win.gear];
       $('rvImg').src=gearIcon(t); $('rvName').textContent=t.name;
       $('rvInfo').innerHTML=`${gr.name} · ${SLOT_NAMES[gearSlot(t)].toLowerCase()}<br>${gearStatText(t)}.<br>Надеть можно во вкладке «Снаряжение».`;
     } else {
-      addItem({base:win.base,name:win.name,color:win.color,grade:win.grade,uses:caseUses(win.base,win.grade),st}); persist();
       $('rvImg').src=iconURL(win.base,win.color);
       $('rvName').textContent=(st!=null?'StatTrak™ ':'')+win.name;
       const meth=BT[win.base].m.map(m=>METHODS[m].name.toLowerCase()).join(', ');
@@ -1777,6 +1831,14 @@ function applyGfx(){
   if(scene.userData.grass) scene.userData.grass.count=Math.floor(scene.userData.grass.userData.max*q.grass);
   resize();
 }
+const AQ={t:0,frames:0,cool:6};
+function autoQuality(dt){
+  if(!['aim','wait','fight','cast'].includes(G.state)){ AQ.t=0; AQ.frames=0; return; }
+  AQ.cool-=dt; AQ.t+=dt; AQ.frames++;
+  if(AQ.t>=4){ const fps=AQ.frames/AQ.t; AQ.t=0; AQ.frames=0;
+    if(AQ.cool<=0 && fps<30 && save.gfx!=='low'){ save.gfx = save.gfx==='high'?'medium':'low'; AQ.cool=10; persist(); applyGfx();
+      showToast(`Графика снижена до «${GFX_NAMES[save.gfx]}», чтобы игра шла плавно. Поменять можно в меню.`,4); } }
+}
 function renderReflection(){
   const q=gfx(); if(!q.refl || !reflRT) return;
   reflCam.fov=camera.fov; reflCam.aspect=camera.aspect; reflCam.near=camera.near; reflCam.far=camera.far; reflCam.updateProjectionMatrix();
@@ -1786,12 +1848,14 @@ function renderReflection(){
   reflTexMat.multiply(reflCam.projectionMatrix); reflTexMat.multiply(reflCam.matrixWorldInverse);
   const vis=[water.visible,gear.aim.visible,gear.line.visible];
   water.visible=false; gear.aim.visible=false; gear.line.visible=false;
+  const mv=ATM.mist.map(m=>m.visible); ATM.mist.forEach(m=>m.visible=false);
   const au=renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate=false;
   renderer.clippingPlanes=[reflClip];
   renderer.setRenderTarget(reflRT); renderer.clear(); renderer.render(scene,reflCam);
   renderer.setRenderTarget(null); renderer.clippingPlanes=[];
   renderer.shadowMap.autoUpdate=au;
   [water.visible,gear.aim.visible,gear.line.visible]=vis;
+  ATM.mist.forEach((m,i)=>m.visible=mv[i]);
 }
 
 function loadMapScene(id,first){
@@ -1803,6 +1867,25 @@ function loadMapScene(id,first){
   if(curMap().pier) buildPier(); else buildLedge();
   CAM3=null; CAM1=null; ROD_BASE_CACHE={};
   if(!first){ buildJumpers(); applyWeather(weather); applyGfx(); if(gear.stand) placeStand(); }
+}
+// ---------- ветер: трава, камыш и кроны колышутся (сдвиг вершин в шейдере) ----------
+const WIND_U={uTime:{value:0},uWind:{value:1}};
+function windify(mat,kind,speed,amp,hExpr){
+  mat.onBeforeCompile=sh=>{
+    sh.uniforms.uTime=WIND_U.uTime; sh.uniforms.uWind=WIND_U.uWind;
+    sh.vertexShader='uniform float uTime;\nuniform float uWind;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      #ifdef USE_INSTANCING
+        vec2 wip=vec2(instanceMatrix[3].x,instanceMatrix[3].z);
+      #else
+        vec2 wip=vec2(0.0);
+      #endif
+      float wph=uTime*${speed}+wip.x*0.37+wip.y*0.29;
+      float whg=${hExpr};
+      float wsw=(sin(wph)*0.6+sin(wph*2.3+1.7)*0.25+sin(wph*5.1)*0.08)*uWind*whg*${amp};
+      transformed.x+=wsw; transformed.z+=wsw*0.55;`);
+  };
+  mat.customProgramCacheKey=()=>'wind-'+kind;
+  return mat;
 }
 function initScene(){
   renderer=new THREE.WebGLRenderer({antialias:true});
@@ -1825,7 +1908,7 @@ function initScene(){
   buildSky(); buildWater();
   loadMapScene(save.map && MAPS[save.map] ? save.map : 'lake', true);
   ENV_MAIN=makeEnv(renderer);
-  buildGear(); buildFX(); buildJumpers();
+  buildGear(); buildFX(); buildJumpers(); buildAtmosphere();
   try{ jumpers.forEach(j=>j.f.visible=true); renderer.compile(scene,camera); }catch(e){} jumpers.forEach(j=>j.f.visible=false);
   applyWeather(weather,true);
   applyGfx();
@@ -1868,7 +1951,7 @@ function buildWater(){
   waterMat=new THREE.ShaderMaterial({
     uniforms:{uTime:{value:0},uAmp:{value:1},uDeep:{value:new THREE.Color()},uSkyTop:{value:new THREE.Color()},uSkyHor:{value:new THREE.Color()},
       uSunDir:{value:new V3()},uSunCol:{value:new THREE.Color()},uFogCol:{value:new THREE.Color()},uFogNear:{value:50},uFogFar:{value:300},uSunI:{value:1},
-      uRefl:{value:reflRT.texture},uTexMat:{value:reflTexMat},uUseRefl:{value:0},uNorm:{value:makeWaterNormals()},uFlow:{value:new THREE.Vector2()},uFoam:{value:0}},
+      uRefl:{value:reflRT.texture},uTexMat:{value:reflTexMat},uUseRefl:{value:0},uNorm:{value:makeWaterNormals()},uFlow:{value:new THREE.Vector2()},uFoam:{value:0},uKind:{value:0},uRiv:{value:new V3(0,1,0)}},
     vertexShader:`uniform float uTime,uAmp; uniform mat4 uTexMat; varying vec3 vW; varying vec3 vN; varying vec4 vRefl;
       void main(){ vec4 w=modelMatrix*vec4(position,1.0); vRefl=uTexMat*vec4(w.x,0.0,w.z,1.0); float h=0.0; vec2 d=vec2(0.0); float ph;
         ph=(0.8*w.x+0.6*w.z)*0.35+uTime*1.1;  h+=0.06*uAmp*sin(ph);  d+=vec2(0.8,0.6)*0.35*0.06*uAmp*cos(ph);
@@ -1877,7 +1960,10 @@ function buildWater(){
         ph=(-0.9*w.x-0.3*w.z)*1.6+uTime*2.4;  h+=0.01*uAmp*sin(ph);  d+=vec2(-0.9,-0.3)*1.6*0.01*uAmp*cos(ph);
         w.y+=h; vW=w.xyz; vN=normalize(vec3(-d.x,1.0,-d.y));
         gl_Position=projectionMatrix*viewMatrix*w; }`,
-    fragmentShader:`uniform float uTime,uAmp,uFogNear,uFogFar,uSunI,uUseRefl,uFoam; uniform vec3 uDeep,uSkyTop,uSkyHor,uSunDir,uSunCol,uFogCol; uniform vec2 uFlow;
+    fragmentShader:`uniform float uKind; uniform vec3 uRiv;
+      float shoreD(vec2 p){ if(uKind<0.5) return length(vec2(p.x/70.0,(p.y+45.0)/50.0));
+        float zc=uRiv.x+uRiv.z*sin(p.x*0.012)*smoothstep(25.0,90.0,abs(p.x)); return abs(p.y-zc)/uRiv.y; }
+      uniform float uTime,uAmp,uFogNear,uFogFar,uSunI,uUseRefl,uFoam; uniform vec3 uDeep,uSkyTop,uSkyHor,uSunDir,uSunCol,uFogCol; uniform vec2 uFlow;
       uniform sampler2D uRefl; uniform sampler2D uNorm; varying vec3 vW; varying vec3 vN; varying vec4 vRefl;
       void main(){
         vec2 fo=uFlow*uTime;
@@ -1892,6 +1978,9 @@ function buildWater(){
         vec3 sky=mix(uSkyHor,uSkyTop,clamp(R.y*1.5,0.0,1.0));
         float depthTint=clamp(length(vW.xz-vec2(0.0,-45.0))/60.0,0.0,1.0);
         vec3 deep=mix(uDeep*1.25+vec3(0.02,0.03,0.0),uDeep,depthTint);
+        float sd=shoreD(vW.xz);
+        float shallow=smoothstep(0.82,1.0,sd);
+        deep=mix(deep,deep*1.7+vec3(0.06,0.07,0.03),shallow*0.75);
         vec2 ruv=vRefl.xy/vRefl.w+dn*(0.03+0.015*uAmp);
         vec3 refl=texture2D(uRefl,clamp(ruv,0.002,0.998)).rgb*0.9;
         vec3 env=mix(sky,refl,uUseRefl);
@@ -1900,6 +1989,9 @@ function buildWater(){
         float sp=pow(max(dot(R,L),0.0),220.0)*2.2+pow(max(dot(R,L),0.0),30.0)*0.18;
         col+=uSunCol*sp*uSunI;
         float fm=smoothstep(0.55,0.95,(n2.x+n3.y)*0.5+0.5)*uFoam;
+        float edge=smoothstep(0.972,0.995,sd)*(1.0-smoothstep(1.0,1.02,sd));
+        float lap=0.55+0.45*sin(vW.x*1.1+vW.z*1.3+uTime*1.6+n1.x*3.0);
+        fm=max(fm,edge*lap*(0.45+0.25*uAmp));
         col=mix(col,vec3(0.9,0.94,0.95),fm*0.55);
         float dist=length(cameraPosition-vW);
         col=mix(col,uFogCol,smoothstep(uFogNear,uFogFar,dist));
@@ -2001,7 +2093,8 @@ function sampleArea(dmin,dmax,maxN,tries,filter){
 function buildTrees(){
   const mp=curMap(), kinds=Object.entries(mp.trees);
   const range=LOADED_MAP==='lake'?[1.08,2.2]:LOADED_MAP==='siberia'?[1.12,4.2]:[1.3,14];
-  const spots=sampleArea(range[0],range[1],LOADED_MAP==='caucasus'?520:400,6000,(x,z)=>{
+  const tq={high:1,medium:.72,low:.48}[save.gfx]||.72;
+  const spots=sampleArea(range[0],range[1],Math.round((LOADED_MAP==='caucasus'?340:400)*tq),6000,(x,z)=>{
     if(z>16) return false;
     if(Math.hypot(x-.2,z-6.4)<10 || Math.hypot(x-1.1,z-9.3)<9) return false;
     const y=groundH(x,z); if(LOADED_MAP==='caucasus' && (y>100 || y<1.2)) return false;
@@ -2011,7 +2104,7 @@ function buildTrees(){
     if(LOADED_MAP==='caucasus' && groundH(x,z)>55) k='fir';
     (byKind[k]||(byKind[k]=[])).push([x,groundH(x,z),z,rand(.75,1.35)]); }
   const m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new V3(), pos=new V3(), col=new THREE.Color(), up=new V3(0,1,0);
-  const mat=new THREE.MeshLambertMaterial({vertexColors:true});
+  const mat=windify(new THREE.MeshLambertMaterial({vertexColors:true}),'tree','0.8','0.045','max(position.y-3.0,0.0)');
   for(const k in byKind){
     const list=byKind[k]; if(!list.length) continue;
     const geos=[TREE_GEO[k](3+k.length),TREE_GEO[k](11+k.length)];
@@ -2076,7 +2169,7 @@ function buildGrass(){
     if(Math.abs(x)<1.05 && z>.8 && z<8.8) continue;
     spots.push([x,y,z]);
   }
-  const im=new THREE.InstancedMesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}),spots.length);
+  const im=new THREE.InstancedMesh(geo,windify(new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}),'grass','1.9','0.14','position.y*position.y'),spots.length);
   const m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new V3(), pos=new V3(), col=new THREE.Color(), up=new V3(0,1,0);
   spots.forEach((t,j)=>{ const h=rand(.18,.55); m.compose(pos.set(t[0],t[1]-.02,t[2]),q.setFromAxisAngle(up,rand(0,6.28)),sc.set(1,h,1)); im.setMatrixAt(j,m);
     const v=rand(.75,1.15); col.setRGB(v*rand(.95,1.1),v,v*rand(.85,1)); im.setColorAt(j,col); });
@@ -2096,7 +2189,7 @@ function buildReeds(){
   const m=new THREE.Matrix4(), q=new THREE.Quaternion(), e=new THREE.Euler(), s=new V3(), p=new V3();
   if(pts.length){
     const geo=new THREE.CylinderGeometry(.008,.02,1,4); geo.translate(0,.5,0);
-    const mesh=new THREE.InstancedMesh(geo,new THREE.MeshLambertMaterial({color:0x5d6b35}),pts.length);
+    const mesh=new THREE.InstancedMesh(geo,windify(new THREE.MeshLambertMaterial({color:0x5d6b35}),'reed','1.3','0.1','position.y*position.y'),pts.length);
     const heads=new THREE.InstancedMesh(new THREE.CylinderGeometry(.035,.035,.22,6),new THREE.MeshLambertMaterial({color:0x4a3322}),pts.length);
     let hk=0;
     pts.forEach((r,i)=>{
@@ -2444,6 +2537,57 @@ function updateFX(dt){
     fx.rain.geometry.attributes.position.needsUpdate=true; }
 }
 
+// ---------- атмосфера: дымка, ореол солнца, птицы, круги от рыбы ----------
+const ATM={mist:[],birds:[],sun:null,riseT:3,birdT:4};
+function softTex(inner,outer){ const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,64,0,64,64,64); gr.addColorStop(0,inner); gr.addColorStop(1,outer); g.fillStyle=gr; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c); }
+function buildAtmosphere(){
+  const mt=softTex('rgba(255,255,255,1)','rgba(255,255,255,0)');
+  for(let i=0;i<9;i++){
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:mt,transparent:true,opacity:0,depthWrite:false,color:0xdfe6ea}));
+    m.rotation.x=-Math.PI/2; m.userData={sp:rand(.3,.8),base:rand(.5,1)}; m.renderOrder=2; scene.add(m); ATM.mist.push(m);
+  }
+  ATM.sun=new THREE.Sprite(new THREE.SpriteMaterial({map:softTex('rgba(255,236,200,.9)','rgba(255,220,160,0)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,fog:false}));
+  ATM.sun.scale.setScalar(120); scene.add(ATM.sun);
+  const bm=new THREE.MeshBasicMaterial({color:0x1a1c20,side:THREE.DoubleSide});
+  for(let i=0;i<5;i++){
+    const b=new THREE.Group();
+    const wing=sx=>{ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute([0,0,-.12, 0,0,.12, sx*.7,0,.02],3)); g.computeVertexNormals(); const w=new THREE.Mesh(g,bm); b.add(w); return w; };
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.08,6,4),bm); body.scale.set(1,1,2.2); b.add(body);
+    b.userData={L:wing(1),R:wing(-1),active:false,t:0}; b.visible=false; scene.add(b); ATM.birds.push(b);
+  }
+}
+function updateAtmosphere(){
+  if(!ATM.sun) return;
+  const w=weather, misty = w.id==='fog'?1 : w.id==='rain'?.55 : w.id==='cloud'?.35 : w.id==='sun'?.18 : 0;
+  ATM.mist.forEach((m,i)=>{ const pt=sampleArea(.1,.85,1,300,(x,z)=>z<-4)[0]||[0,-30];
+    m.position.set(pt[0],rand(.4,2.2),pt[1]); const sz=rand(35,70); m.scale.set(sz,sz*.55,1);
+    m.userData.target=misty*m.userData.base*(i%3===0?.55:.35); });
+  const sd=sunDir(w); ATM.sun.userData.dir=sd;
+  ATM.sun.material.opacity=Math.max(0,(w.sunI-.3))*(1-w.cloud)*.9;
+}
+function updateAtm(dt){
+  if(!ATM.sun) return;
+  for(const m of ATM.mist){ const u=m.userData; m.position.x+=u.sp*dt*(1+weather.amp*.3); if(m.position.x>120) m.position.x=-120;
+    m.material.opacity+=((u.target||0)-m.material.opacity)*Math.min(1,dt*.3); m.visible=m.material.opacity>.01; }
+  if(ATM.sun.userData.dir){ ATM.sun.position.copy(camera.position).addScaledVector(ATM.sun.userData.dir,400); ATM.sun.visible=ATM.sun.material.opacity>.02; }
+  // птицы
+  ATM.birdT-=dt;
+  if(ATM.birdT<=0){ ATM.birdT=weather.rain?rand(40,80):rand(10,25);
+    const b=ATM.birds.find(x=>!x.userData.active); if(b){ const u=b.userData, side=Math.random()<.5?-1:1;
+      u.active=true; u.t=0; u.from=new V3(side*140,rand(22,45),rand(-120,-40)); u.to=new V3(-side*140,rand(22,45),rand(-120,-30)); u.dur=rand(18,30); u.flap=rand(7,10); b.visible=true;
+      b.scale.setScalar(rand(1.2,2.2)); } }
+  for(const b of ATM.birds){ const u=b.userData; if(!u.active) continue; u.t+=dt; const k=u.t/u.dur;
+    b.position.lerpVectors(u.from,u.to,k); b.position.y+=Math.sin(u.t*.7)*2;
+    b.lookAt(u.to.x,b.position.y,u.to.z); const glide=Math.sin(u.t*.9)>.4;
+    const a=glide?.1:Math.sin(u.t*u.flap)*.7; u.L.rotation.z=a; u.R.rotation.z=-a;
+    if(k>=1){ u.active=false; b.visible=false; } }
+  // круги от играющей рыбы
+  ATM.riseT-=dt;
+  if(ATM.riseT<=0){ ATM.riseT=rand(3,9); const pt=sampleArea(0,.9,1,200,(x,z)=>z<-3 && z>-70 && Math.abs(x)<50)[0];
+    if(pt){ ripple(pt[0],pt[1],rand(.6,1.4),rand(1.4,2.2)); if(Math.random()<.35) SND.nibble(pt[0]); } }
+}
+
 // ---------- ambient jumpers ----------
 const jumpers=[]; let nextJump=4;
 function buildJumpers(){
@@ -2641,7 +2785,7 @@ function paintFishV2(m){
 const FIN_TEX={};
 function finCanvas(hex,kind,opt={}){
   const key=[hex,kind,opt.spot,opt.mottle,opt.dots].join('|'); if(FIN_TEX[key]) return FIN_TEX[key];
-  const S=256, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d'); const col=hexRgb(hex);
+  const S=256, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d'); if(!g) return null; const col=hexRgb(hex);
   if(kind==='fan'){
     const gr=g.createLinearGradient(0,0,S,0); gr.addColorStop(0,rgbStr(col,.95)); gr.addColorStop(.8,rgbStr(col,.72)); gr.addColorStop(1,rgbStr(mixRgb(col,[0,0,0],.3),.6));
     g.fillStyle=gr; g.fillRect(0,0,S,S);
@@ -2671,8 +2815,8 @@ function remapUV(geo,mode){
   uv.needsUpdate=true; return geo;
 }
 function finMatV2(hex,kind,opt,env){
-  const t=new THREE.CanvasTexture(finCanvas(hex,kind,opt));
-  return new THREE.MeshStandardMaterial({map:t,transparent:true,side:THREE.DoubleSide,roughness:.55,metalness:0,depthWrite:false,envMap:env||null,envMapIntensity:.3});
+  const cv=finCanvas(hex,kind,opt); const t=cv?new THREE.CanvasTexture(cv):null;
+  return new THREE.MeshStandardMaterial({map:t,color:t?0xffffff:new THREE.Color(hex),opacity:t?1:.75,transparent:true,side:THREE.DoubleSide,roughness:.55,metalness:0,depthWrite:false,envMap:env||null,envMapIntensity:.3});
 }
 function finAlong(m,u0,u1,h,type,bottom){
   const sh=new THREE.Shape(); const N=10; const Y=u=>bottom?botY(m,u)+.004:topY(m,u)-.004; const sg=bottom?-1:1;
@@ -2703,7 +2847,7 @@ function tailGeo(m){
 }
 function paddle(len,wid){ const sh=new THREE.Shape(); sh.moveTo(0,-wid*.2); sh.quadraticCurveTo(-len*.25,wid*1.05,-len,wid*.45); sh.quadraticCurveTo(-len*.85,-wid*.2,0,-wid*.28); return new THREE.ShapeGeometry(sh,10); }
 function irisTex(col,big){
-  const S=128, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d'); const k=hexRgb(col);
+  const S=128, c=document.createElement('canvas'); c.width=c.height=S; const g=c.getContext('2d'); if(!g) return null; const k=hexRgb(col);
   const gr=g.createRadialGradient(S/2,S/2,S*.1,S/2,S/2,S/2); gr.addColorStop(0,'#000'); gr.addColorStop(big?.5:.42,'#000'); gr.addColorStop(big?.54:.46,rgbStr(mixRgb(k,[255,255,255],.35))); gr.addColorStop(.85,rgbStr(k)); gr.addColorStop(1,rgbStr(mixRgb(k,[0,0,0],.6)));
   g.fillStyle=gr; g.fillRect(0,0,S,S);
   g.strokeStyle='rgba(0,0,0,.25)'; for(let i=0;i<40;i++){ const a=i/40*Math.PI*2; g.beginPath(); g.moveTo(S/2+Math.cos(a)*S*.3,S/2+Math.sin(a)*S*.3); g.lineTo(S/2+Math.cos(a)*S*.48,S/2+Math.sin(a)*S*.48); g.stroke(); }
@@ -2722,6 +2866,8 @@ function makeEnv(r){
     const t=pm.fromScene(sc,.03).texture; pm.dispose(); return t;
   }catch(e){ return null; }
 }
+function freeCanvas(c){ try{ c.width=0; c.height=0; }catch(e){} }
+function texOf(c){ const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t; }
 // кэш: геометрия и текстуры каждого вида создаются один раз
 const FISH_ASSETS={};
 function fishAssets(sp){
@@ -2730,15 +2876,19 @@ function fishAssets(sp){
   const geo=new THREE.BufferGeometry(); geo.setIndex(bd.idx);
   geo.setAttribute('position',new THREE.Float32BufferAttribute(bd.pos,3)); geo.setAttribute('uv',new THREE.Float32BufferAttribute(bd.uv,2));
   geo.computeVertexNormals();
-  const hi=paintFishV2(sp.m);
-  const down=src=>{ const c=document.createElement('canvas'); c.width=512; c.height=256; c.getContext('2d').drawImage(src,0,0,512,256); return c; };
-  const T=c=>{ const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t; };
-  a={geo, hi:{map:T(hi.map),bump:T(hi.bump)}, lo:{map:T(down(hi.map)),bump:T(down(hi.bump))}};
+  let lo=null;
+  try{
+    const hi=paintFishV2(sp.m);
+    const down=src=>{ const c=document.createElement('canvas'); c.width=512; c.height=256; c.getContext('2d').drawImage(src,0,0,512,256); return c; };
+    lo={map:texOf(down(hi.map)),bump:texOf(down(hi.bump))};
+    freeCanvas(hi.map); freeCanvas(hi.bump);           // большие холсты сразу освобождаем (важно для iPhone)
+  }catch(e){ console.warn('fish texture',sp.id,e); lo=null; }
+  a={geo, lo};
   FISH_ASSETS[sp.id]=a; return a;
 }
 let warmList=null;
 function warmFishCache(){
-  if(!warmList) warmList=Object.values(SPMAP);
+  if(!warmList) warmList=[...mapSpeciesIds(),curMap().legendId].map(id=>SPMAP[id]).filter(Boolean);
   const sp=warmList.find(x=>!FISH_ASSETS[x.id]);
   if(!sp){ if(!insp) try{ initInspector(); }catch(e){} return; }
   if(G.state==='fight'){ setTimeout(warmFishCache,1500); return; }
@@ -2747,9 +2897,11 @@ function warmFishCache(){
 function buildFish(sp,env,hiRes){
   env = env===undefined ? ENV_MAIN : env;
   const m=sp.m, g=new THREE.Group();
-  const A=fishAssets(sp), tx=hiRes?A.hi:A.lo;
-  const geo=A.geo, map=tx.map, bump=tx.bump;
-  const body=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map,bumpMap:bump,bumpScale:m.scale?.006:.002,roughness:m.rough??.35,metalness:m.metal??.3,envMap:env||null,envMapIntensity:.95,side:THREE.DoubleSide}));
+  const A=fishAssets(sp); let tx=A.lo, own=null;
+  if(hiRes){ try{ const hi=paintFishV2(m); own={map:texOf(hi.map),bump:texOf(hi.bump)}; tx=own; }catch(e){ own=null; } }
+  const geo=A.geo, map=tx?tx.map:null, bump=tx?tx.bump:null;
+  g.userData.own=own;
+  const body=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map,bumpMap:bump,color:map?0xffffff:new THREE.Color(m.cSide),bumpScale:m.scale?.006:.002,roughness:m.rough??.35,metalness:m.metal??.3,envMap:env||null,envMapIntensity:.95,side:THREE.DoubleSide}));
   g.add(body);
   const fD=m.fin||m.finD, fT=m.fin||m.finT, fA=m.fin||m.finA, fP=m.fin||m.finP||m.finA;
   const d=m.dorsal;
@@ -2787,7 +2939,8 @@ function buildFish(sp,env,hiRes){
   return g;
 }
 function animFish(f,t,speed=1){ const tl=f.userData.tail; if(tl) tl.rotation.y=Math.sin(t*9*speed)*.4; }
-function disposeFish(f){ const body=f.userData.body; f.traverse(o=>{ if(o.isMesh && o!==body && o.geometry) o.geometry.dispose(); }); }
+function disposeFish(f){ const own=f.userData.own; if(own){ for(const t of [own.map,own.bump]){ t.dispose(); if(t.image) freeCanvas(t.image); } f.userData.own=null; }
+  const body=f.userData.body; f.traverse(o=>{ if(o.isMesh && o!==body && o.geometry) o.geometry.dispose(); }); }
 
 // =====================================================================
 // WEATHER
@@ -2803,6 +2956,9 @@ function applyWeather(w){
   const mp=curMap(), fm=mp.fogMul||1;
   if(mp.deep) U.uDeep.value.set(mp.deep);
   U.uFlow.value.set(mp.flow||0,0); U.uFoam.value=mp.foam||0;
+  if(LOADED_MAP==='lake') U.uKind.value=0; else { const r=RIVER[LOADED_MAP]; U.uKind.value=1; U.uRiv.value.set(r.zc,r.hw,r.amp); }
+  WIND_U.uWind.value=.6+w.amp*.5;
+  updateAtmosphere();
   U.uFogCol.value.set(w.fogCol); U.uFogNear.value=w.fog[0]*fm; U.uFogFar.value=w.fog[1]*fm; U.uAmp.value=w.amp*(mp.flow?1.2:1); U.uSunI.value=w.sunI*(1-w.cloud*.6);
   scene.fog.color.set(w.fogCol); scene.fog.near=w.fog[0]*fm; scene.fog.far=w.fog[1]*fm;
   hemi.color.set(w.hor); hemi.groundColor.set('#3a4230'); hemi.intensity=.55+.3*(1-w.sunI*.4);
@@ -2836,7 +2992,10 @@ function updateHud(){
   $('hBait').innerHTML = it ? `<img src="${iconURL(it.base,it.color)}" alt="">${itemLabel(it)} · ${BT[it.base].lure?it.uses+' шт.':'×'+it.uses}` : 'Нет приманки';
   $('hBait').style.borderBottom = it ? `3px solid ${GRADES[it.grade].color}` : '';
   $('hCoins').textContent=fmtCoins(save.coins); renderLvl();
+  requestAnimationFrame(layoutOverlays);
 }
+function layoutOverlays(){ const h=$('hud'); const b=h.hidden?12:h.getBoundingClientRect().bottom; document.documentElement.style.setProperty('--hudB',Math.round(b)+'px'); }
+window.addEventListener('resize',()=>setTimeout(layoutOverlays,50));
 $('hMenu').onclick=()=>openHub();
 $('hBait').onclick=()=>openHub('fish');
 
@@ -2873,15 +3032,17 @@ function biteTable(it){
   for(const [id,mul] of curMap().species){ const sp=SPMAP[id]; if(!sp) continue;
     const ma=(sp.method[G.mode]||0)/3, ba=(sp.bait[it.base]||0)/3; if(!ma||!ba) continue;
     const cf=(weather.colorF[it.color]||1)*(sp.col[it.color]||1);
-    const v=sp.ab*mul*ma*ba*(weather.fishF[sp.id]||1)*cf; list.push([sp,v]); sum+=v;
+    const v=sp.ab*mul*ma*Math.pow(ba,2.2)*(weather.fishF[sp.id]||1)*cf; list.push([sp,v]); sum+=v;
   }
   return {list,sum};
 }
-function biteRate(it,t){ return Math.min(.45,.0065*t.sum*GRADES[it.grade].bite); }
+function biteRate(it,t){ return Math.min(.45,.0095*t.sum*GRADES[it.grade].bite); }
+// крупная насадка — крупная рыба, мелкая — мелочь
+const BAIT_SIZE={blood:-.5,maggot:-.3,fly:-.3,caddis:-.2,barley:-.1,bread:0,dough:0,worm:.1,corn:.2,boilie:.5,spinner:0,spoon:.2,soft:.2,popper:.1,wobbler:.3,mouse:.6};
 function rollFish(it){
   const t=G.table; let r=Math.random()*t.sum, sp=t.list[0][0];
   for(const [s,v] of t.list){ if((r-=v)<=0){ sp=s; break; } }
-  const q=Math.pow(Math.random(),2.2/GRADES[it.grade].trophy);
+  const q=Math.pow(Math.random(),2.2/(GRADES[it.grade].trophy*Math.max(.4,1+(BAIT_SIZE[it.base]||0)*.6)));
   const weight=sp.w[0]+(sp.w[1]-sp.w[0])*q;
   let tier=sp.tier; if(q>.93) tier=5; else if(q>.7) tier=Math.min(4,tier+1);
   return {sp,weight,q,tier};
@@ -2933,10 +3094,11 @@ function fightParams(fish){
   const mon=fish.tier===6;
   const F=mon?4.5:Math.min(4,fish.sp.str*(.6+fish.q*1.5));
   const P=rodPower(equipped(G.mode).grade), D=reelDrag(equipped('reel').grade), S=reelSpeed(equipped('reel').grade), L=equipped('line').kg;
-  let wz=clamp(.30*(.6*P+.4*D)/Math.pow(F,.6),.1,.42);
+  let wz=clamp(.26*(.6*P+.4*D)/Math.pow(F,.6),.09,.4);
   if(fish.weight>L*2.5) wz*=.75;
-  return {F,wz,mon,zsp:(.25+.18*F)/Math.pow(D,.4),rin:.13*S/Math.sqrt(F),rout:.045*Math.pow(F,.3),
-    grace:.5+.9*Math.min(1,L/(fish.weight*.6+.5))};
+  const big = mon || fish.tier>=3 || fish.weight>=4;
+  return {F,wz,mon,zsp:1.25*(.25+.18*F)/Math.pow(D,.4),rin:.13*S/Math.sqrt(F),rout:.058*Math.pow(F,.3),
+    grace:.4+.9*Math.min(1,L/(fish.weight*.6+.5)), mini: big ? (mon?8:fish.tier>=5?7:fish.tier>=4?6:5) : 0, miniTries:0, wasOver:false};
 }
 function hookFish(fish){
   G.bite=null; G.monster=null;
@@ -2955,10 +3117,77 @@ function loseFish(msg,breakLine){
   const it=curItem();
   flash(msg,1.4);
   if(breakLine) SND.snap(); else if(G.fight) SND.splash(.5,G.fight.pos.distanceTo(rodBase()),G.fight.pos.x);
-  if(it){ if(breakLine) useItem(it); else if(!BT[it.base].lure && Math.random()<.5) useItem(it); }
+  if(it){
+    if(breakLine && BT[it.base].lure){ save.lost.push({base:it.base,name:it.name,color:it.color,grade:it.grade,st:it.st}); save.lost=save.lost.slice(-30);
+      setTimeout(()=>showToast('Приманка осталась на дне. Её может достать водолаз: Меню → Инвентарь',4),1500); }
+    if(breakLine) useItem(it); else if(!BT[it.base].lure && Math.random()<.5) useItem(it); }
   cleanupFight(); G.state='aim'; updateHud();
 }
-function cleanupFight(){ if(G.fightFish){ scene.remove(G.fightFish); disposeFish(G.fightFish); G.fightFish=null; } G.fight=null; $('fightUI').hidden=true; }
+function cleanupFight(){ $('mini').hidden=true; if(G.fightFish){ scene.remove(G.fightFish); disposeFish(G.fightFish); G.fightFish=null; } G.fight=null; $('fightUI').hidden=true; }
+// ---------- мини-игра: повтори последовательность, соединив точки линией ----------
+const MINI={};
+function startMini(){
+  const F=G.fight; G.state='mini'; G.holding=false; F.miniTries++;
+  const n=F.mini, cv=$('miniCv'); $('mini').hidden=false;
+  const r=cv.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=r.width*dpr; cv.height=r.height*dpr;
+  const W=r.width, H=r.height, pad=Math.min(W,H)*.12, R=Math.max(20,Math.min(W,H)*.065);
+  const pts=[];
+  for(let i=0;i<n;i++){ let p,t=0; do{ p={x:rand(pad,W-pad),y:rand(pad,H-pad)}; t++; }while(t<200 && pts.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<R*3)); pts.push(p); }
+  const order=pts.map((_,i)=>i).sort(()=>Math.random()-.5);
+  Object.assign(MINI,{pts,order,R,W,H,dpr,phase:'show',t:0,showStep:.55,idx:0,path:[],finger:null,drawing:false,
+    limit:n*(0.8+.04*equipped('reel').grade)+1.2, left:0});
+  MINI.left=MINI.limit;
+  $('miniTitle').textContent='Последний рывок!';
+  $('miniInfo').textContent='Запомни порядок точек…';
+  $('miniTime').style.width='100%';
+  SND.strike(); drawMini();
+}
+function drawMini(){
+  const M=MINI, cv=$('miniCv'), g=cv.getContext('2d'); g.setTransform(M.dpr,0,0,M.dpr,0,0); g.clearRect(0,0,M.W,M.H);
+  // линии, которые уже соединены
+  g.lineWidth=6; g.lineCap='round'; g.strokeStyle='#ffd166';
+  if(M.path.length){ g.beginPath(); g.moveTo(M.pts[M.path[0]].x,M.pts[M.path[0]].y); for(const i of M.path.slice(1)) g.lineTo(M.pts[i].x,M.pts[i].y); if(M.finger&&M.drawing) g.lineTo(M.finger.x,M.finger.y); g.stroke(); }
+  const shown = M.phase==='show' ? Math.floor(M.t/M.showStep) : -1;
+  M.pts.forEach((p,i)=>{
+    const k=M.order.indexOf(i), lit = M.phase==='show' ? k<=shown : M.path.includes(i);
+    const active = M.phase==='show' && k===shown;
+    g.fillStyle = active ? '#ffd166' : lit ? '#5ad688' : 'rgba(255,255,255,.18)';
+    g.beginPath(); g.arc(p.x,p.y,M.R*(active?1.15:1),0,7); g.fill();
+    g.strokeStyle='rgba(255,255,255,.6)'; g.lineWidth=2; g.stroke();
+    if(M.phase==='show' && k<=shown){ g.fillStyle='#10262d'; g.font=`800 ${Math.round(M.R*.9)}px Nunito, sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(k+1,p.x,p.y+1); }
+  });
+}
+function updateMini(dt){
+  const M=MINI, F=G.fight; if(!F){ $('mini').hidden=true; return; }
+  M.t+=dt;
+  if(M.phase==='show'){ const n=M.pts.length; if(M.t>=M.showStep*(n+1)){ M.phase='play'; M.t=0; $('miniInfo').textContent='Соедини точки в том же порядке! Веди пальцем от первой точки.'; } drawMini(); return; }
+  if(M.phase==='play'){ M.left-=dt; $('miniTime').style.width=clamp(M.left/M.limit,0,1)*100+'%'; if(M.left<=0) miniFail('Не успел!'); }
+}
+function miniPoint(e){ const r=$('miniCv').getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+function miniHit(p){ const M=MINI; return M.pts.findIndex(q=>Math.hypot(q.x-p.x,q.y-p.y)<M.R*1.15); }
+function miniTouch(p){
+  const M=MINI; const h=miniHit(p); if(h<0 || M.path.includes(h)) return;
+  if(h===M.order[M.path.length]){ M.path.push(h); SND.dragKnob(); if(M.path.length===M.pts.length) miniWin(); }
+  else miniFail('Не та точка!');
+}
+$('miniCv').addEventListener('pointerdown',e=>{ if(MINI.phase!=='play') return; e.preventDefault(); try{ $('miniCv').setPointerCapture(e.pointerId); }catch(_){} MINI.drawing=true; MINI.finger=miniPoint(e); miniTouch(MINI.finger); drawMini(); });
+$('miniCv').addEventListener('pointermove',e=>{ if(MINI.phase!=='play' || !MINI.drawing) return; MINI.finger=miniPoint(e); miniTouch(MINI.finger); drawMini(); });
+$('miniCv').addEventListener('pointerup',()=>{ MINI.drawing=false; drawMini(); });
+function miniEnd(){ MINI.phase='done'; setTimeout(()=>{ $('mini').hidden=true; },650); }
+function miniWin(){
+  const F=G.fight; $('miniTitle').textContent='Есть! Рыба у берега!'; $('miniInfo').textContent=''; drawMini(); miniEnd();
+  F.miniOk=true; setTimeout(()=>{ if(G.fight===F){ G.state='fight'; F.prog=1; landFish(); } },700);
+}
+function miniFail(msg){
+  const F=G.fight; $('miniTitle').textContent=msg; drawMini(); miniEnd();
+  setTimeout(()=>{
+    if(G.fight!==F) return;
+    if(Math.random()<.15 || F.miniTries>=3){ $('mini').hidden=true; G.state='fight'; loseFish(F.miniTries>=3?'Рыба сошла у самого берега!':'Обрыв лески!',F.miniTries<3); return; }
+    G.state='fight'; F.prog=.62; F.dash=1; F.strain=Math.min(F.grace*.6,F.strain+F.grace*.3);
+    flash('Рыба рванула!',1.1); SND.splash(1,F.pos.distanceTo(rodBase()),F.pos.x);
+  },700);
+}
 function landFish(){
   const f=G.fight; const it=curItem();
   const sp=f.sp; const len=sp.lenK*Math.cbrt(f.weight);
@@ -2995,7 +3224,7 @@ function initInspector(){
 function showCatch(sp,w,len,tier,coins,note){
   if(!insp) initInspector();
   if(insp.fish){ insp.sc.remove(insp.fish); disposeFish(insp.fish); }
-  insp.fish=buildFish(sp,insp.env,true); insp.sc.add(insp.fish); insp.rotY=.4; insp.rotX=.12; insp.auto=true;
+  try{ insp.fish=buildFish(sp,insp.env,true); insp.sc.add(insp.fish); }catch(e){ console.warn(e); insp.fish=null; } insp.rotY=.4; insp.rotX=.12; insp.auto=true;
   $('cName').textContent=sp.name;
   $('cTier').textContent=FT[tier].name; $('cTier').style.background=FT[tier].color;
   $('cRec').textContent=note;
@@ -3079,7 +3308,7 @@ $('reelIn').onclick=reelIn;
 function update(dt){
   G.t+=dt;
   waterMat.uniforms.uTime.value=G.t; skyMat.uniforms.uTime.value=G.t;
-  updateFX(dt); updateJumpers(dt); SND.update(dt);
+  updateFX(dt); updateJumpers(dt); SND.update(dt); updateAtm(dt); WIND_U.uTime.value=G.t; autoQuality(dt);
   if(toastT>0){ toastT-=dt; if(toastT<=0) $('toast').hidden=true; }
   if(alertT>0){ alertT-=dt; if(alertT<=0) $('alert').classList.remove('on'); }
   if(insp && !$('catchOv').hidden && insp.fish){ if(insp.auto) insp.rotY+=dt*.5; insp.fish.rotation.set(insp.rotX,insp.rotY,0); animFish(insp.fish,G.t,.35); insp.r.render(insp.sc,insp.cam); }
@@ -3091,6 +3320,7 @@ function update(dt){
     showToast(`Погода меняется: ${nw.emo} ${nw.name}. Может, сменить приманку?`,4);
     if(G.state==='wait'){ const it=curItem(); if(it){ G.table=biteTable(it); G.rate=biteRate(it,G.table); } } }
 
+  if(G.state==='mini' && !G.fight){ G.state='aim'; }
   for(const k in gear.rods) gear.rods[k].yaw.visible = k===G.mode;
   gear.stand.visible = G.mode==='feeder';
   const rod=gear.rods[G.mode]; const base=rodBase();
@@ -3125,6 +3355,7 @@ function update(dt){
     if(k>=1){ gear.sinker.visible=false; landCast(); }
   }
   else if(G.state==='wait') updateWait(dt);
+  else if(G.state==='mini') { updateMini(dt); if(!G.fight) return; }
   else if(G.state==='fight') { updateFight(dt); if(!G.fight) return; bend=.3+G.fight.m*1.0+(G.fight.rush>0?.25:0)+Math.sin(G.t*14)*.03; }
 
   if(G.state==='wait'){
@@ -3220,6 +3451,12 @@ function updateFight(dt){
   F.prog += inZone ? F.rin*(.75+.5*dset)*dt : (F.rush>0 ? 0 : -F.rout*dt*(F.m<.05?1.8:1));
   // фрикцион: при перетяге катушка стравливает леску
   F.slip=0;
+  const nowOver=F.m>F.over;
+  if(nowOver && !F.wasOver){ // ошибка: вход в перетяг — дополнительный шанс обрыва 15% (ослабленный фрикцион вдвое снижает риск)
+    const ch=.15*(dset<=.4?.5:1);
+    if(Math.random()<ch){ F.wasOver=true; loseFish('Обрыв лески!',true); return; }
+  }
+  F.wasOver=nowOver;
   if(F.m>F.over){
     F.slip=(1-dset)*(F.rush>0?1:.8);
     F.strain+=dt*(F.rush>0?2:1)*Math.pow(dset,1.5)/Math.sqrt(reelDrag(equipped('reel').grade));
@@ -3248,6 +3485,7 @@ function updateFight(dt){
   setHint(hint);
   if(F.strain>=F.grace){ loseFish('Обрыв лески!',true); return; }
   if(F.prog<=0){ showToast('Метка слишком долго была вне зелёной зоны',3); loseFish('Сошла!',false); return; }
+  if(F.prog>=.93 && F.mini && !F.miniOk){ startMini(); return; }
   if(F.prog>=1){ landFish(); return; }
   F.surge = F.rush>0 ? 2.5 : F.dash>0 ? 1.2 : .3;
   const k=clamp(F.prog,0,1);
